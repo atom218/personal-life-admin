@@ -9,6 +9,7 @@ from googleapiclient.discovery import build
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+
 SECRETS_DIR = BASE_DIR / "secrets"
 
 CREDENTIALS_FILE = SECRETS_DIR / "credentials.json"
@@ -72,3 +73,40 @@ def get_message(message_id):
         )
         .execute()
     )
+
+
+def get_profile():
+    """
+    Get the authenticated Gmail account's profile information.
+    """
+
+    service = get_gmail_service()
+
+    return (
+        service.users()
+        .getProfile(
+            userId="me",
+        )
+        .execute()
+    )
+
+
+def get_history(start_history_id):
+    """
+    Get Gmail mailbox changes that occurred after start_history_id.
+    """
+
+    service = get_gmail_service()
+
+    response = (
+        service.users()
+        .history()
+        .list(
+            userId="me",
+            startHistoryId=start_history_id,
+            historyTypes=["messageAdded"],
+        )
+        .execute()
+    )
+
+    return response

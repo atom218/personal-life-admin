@@ -85,14 +85,71 @@ IMPORTANT RULES:
 8. Confidence must be between 0 and 1.
 9. When uncertain, prefer actionable=false and lower confidence.
 10. Return ONLY JSON. Do not include markdown or additional text.
+
+IMPORTANT DISTINCTION:
+
+Only create a task when the email represents an unresolved personal
+obligation that the user needs to remember or complete.
+
+Do NOT create persistent tasks for immediate or ephemeral actions that
+are normally completed while using the email, such as:
+
+- OTPs
+- Login codes
+- Temporary access codes
+- Verification codes
+- One-time passwords
+- Magic login links
+- Routine sign-in notifications
+- Delivery notifications
+- Receipts
+- Confirmation emails for actions the user has already completed
+
+The fact that an email contains a call to action does NOT by itself make
+it a task.
+
+Ask:
+"Is there likely to still be something for the user to remember or
+complete after this email has been dealt with?"
+
+If the answer is no, actionable should be false.
+
+ACTIONABLE:
+- "Please submit your report by Friday."
+- "Please review the proposal and send feedback."
+- "Please RSVP by Wednesday."
+- "Please schedule your interview."
+- "Complete your course registration before Friday."
+
+NOT ACTIONABLE:
+- "Your OTP is 123456."
+- "Your temporary Netflix access code is 123456."
+- "Your password was successfully changed."
+- "Your package has been delivered."
+- "Your payment was received."
 """
 
 
-def extract_task(email_text: str) -> ExtractedTask:
+def extract_task(subject: str, sender: str, body: str):
+    user_prompt = f"""
+Email subject:
+{subject}
+
+Sender:
+{sender}
+
+Email body:
+{body}
+
+Remember:
+- If the email is NOT actionable, actionable must be false.
+- Even when actionable is false, still provide a short title,
+  description, priority, category, confidence, and reason.
+- Use null only for deadline when there is no explicit deadline.
+"""
+
     response = client.chat.completions.create(
         model="openai/gpt-oss-120b",
-        temperature=0,
-        response_format={"type": "json_object"},
         messages=[
             {
                 "role": "system",
@@ -100,13 +157,12 @@ def extract_task(email_text: str) -> ExtractedTask:
             },
             {
                 "role": "user",
-                "content": email_text,
+                "content": user_prompt,
             },
         ],
+        temperature=0,
     )
 
     content = response.choices[0].message.content
 
-    data = json.loads(content)
-
-    return ExtractedTask(**data)
+    return ExtractedTask.model_validate_json(content)
