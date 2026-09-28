@@ -10,3 +10,4 @@ class ExtractedTask(BaseModel):
     priority: str
     category: Optional[str] = None
     confidence: float
+    reason: Optional[str] = None

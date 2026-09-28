@@ -1,44 +1,53 @@
 from groq_client import extract_task
-from firebase import db
 
 
-sample_email = """
-Hi Vandan,
+test_emails = [
 
-Please submit the first draft of your independent study report
-by Friday at 5 PM.
+    """
+    Hi Vandan,
 
-Make sure the experiment results are included.
+    Please submit the first draft of your independent study report
+    by Friday at 5 PM. Make sure the experiment results are included.
 
-Thanks,
-Professor
-"""
+    Thanks,
+    Professor
+    """,
+
+    """
+    Hi Vandan,
+
+    Here are this week's machine learning engineering job openings.
+    We found 15 positions that may be relevant to your background.
+
+    Best,
+    Job Alerts
+    """,
+
+    """
+    Hi Vandan,
+
+    Please review the attached project proposal and send me your
+    feedback by Wednesday.
+
+    Thanks,
+    Professor
+    """,
+
+    """
+    Your Amazon order has been delivered.
+
+    Your package was left at your front door.
+    """,
+
+]
 
 
-task = extract_task(sample_email)
+for i, email in enumerate(test_emails, start=1):
 
-print("\nAI extracted:")
-print(task.model_dump_json(indent=2))
+    print(f"\n{'=' * 70}")
+    print(f"TEST EMAIL {i}")
+    print("=" * 70)
 
+    task = extract_task(email)
 
-if task.actionable:
-
-    task_data = task.model_dump()
-
-    task_data["source"] = {
-        "type": "test_email",
-        "content": sample_email,
-    }
-
-    doc_ref = (
-        db.collection("users")
-        .document("test-user")
-        .collection("tasks")
-        .add(task_data)
-    )
-
-    print("\nTask successfully saved to Firebase!")
-    print(f"Document reference: {doc_ref[1].id}")
-
-else:
-    print("\nNo actionable task detected.")
+    print(task.model_dump_json(indent=2))
